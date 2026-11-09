@@ -14,7 +14,7 @@
 
 *Last updated: Nov 9, 2026 · Target: Dec 1, 2026*
 
-**Planning stage.** The sections below describe how the project is designed to work. The code is not fully written yet, so the setup and run steps will not work until the files are committed.
+**In-Progress Stage.** The sections below describe how the project is designed to work. The code is not fully written yet, so the setup and run steps will not work until the files are committed.
 
 **Planned code**
 - [ ] `app.py`: Flask app with `broken`, `partial`, and `secure` modes
