@@ -4,7 +4,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Flask](https://img.shields.io/badge/built%20with-Flask-black)
-![Status](https://img.shields.io/badge/status-planning-orange)
+![Status](https://img.shields.io/badge/status-in%20progress-orange)
 
 **Group:** Cameron Bentley, Greyson Brummer, Brian Tramuel
 
