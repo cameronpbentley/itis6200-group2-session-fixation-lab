@@ -32,6 +32,7 @@ EXPECTED = {
     "cookie_planting":     {"broken": True,  "partial": True,  "secure": False},
     "stolen_id_other_ua":  {"broken": True,  "partial": False, "secure": False},
     "legit_ua_update":     {"broken": None,  "partial": True,  "secure": True},
+    "reverify_bruteforce": {"broken": None,  "partial": False, "secure": False},
 }
 
 
@@ -112,11 +113,27 @@ def legit_ua_update(base):
     return ok, f"after UA change -> {first.status_code}, after re-verify -> {second.status_code}"
 
 
+def reverify_bruteforce(base):
+    """Attacker with a stolen ID hits step-down and guesses passwords. Session should get killed."""
+    victim = Client(base, VICTIM_UA)
+    victim.req("GET", "/login")
+    victim.login()
+    attacker = Client(base, ATTACKER_UA, "attacker")
+    attacker.cookies[SID] = victim.cookies[SID]
+    attacker.req("GET", "/dashboard")  # different UA, trips step-down
+    for _ in range(3):
+        attacker.req("POST", "/reverify", data={"password": "wrong-guess"})
+    r = victim.req("GET", "/dashboard")
+    still_alive = "not signed in" not in r.text
+    return still_alive, f"victim GET /dashboard after 3 bad guesses -> {r.status_code}"
+
+
 SCENARIOS = {
     "url_param_fixation": url_param_fixation,
     "cookie_planting": cookie_planting,
     "stolen_id_other_ua": stolen_id_other_ua,
     "legit_ua_update": legit_ua_update,
+    "reverify_bruteforce": reverify_bruteforce,
 }
 
 

@@ -34,6 +34,7 @@ COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "sid")  # group-assigned coo
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "1") == "1"
 IDLE_TIMEOUT = 15 * 60       # seconds of inactivity
 ABSOLUTE_TIMEOUT = 8 * 3600  # hard lifetime of a session
+MAX_REVERIFY_ATTEMPTS = 3    # bad reverify attempts before the session is destroyed
 
 USERNAME = os.environ.get("DEMO_USER", "alice")
 PASSWORD = os.environ.get("DEMO_PASS", "correct-horse-battery")
@@ -79,6 +80,7 @@ def create_session(sid: str, user=None) -> dict:
         "last_seen": now,
         "ua_hash": ua_hash() if user else None,
         "stepped_down": False,
+        "reverify_fails": 0,
     }
     with LOCK:
         store()[sid] = rec
@@ -305,6 +307,16 @@ def reverify():
 
     hashed = USERS.get(rec["user"])
     if not hashed or not check_password_hash(hashed, request.form.get("password", "")):
+        with LOCK:
+            rec["reverify_fails"] += 1
+            too_many = rec["reverify_fails"] >= MAX_REVERIFY_ATTEMPTS
+        if too_many:
+            # stops someone with a stolen ID from guessing passwords forever
+            destroy_session(sid)
+            body, _ = page("Signed out", "<p>Too many failed attempts. <a href='/login'>Sign in again</a></p>")
+            resp = make_response(body, 401)
+            resp.delete_cookie(COOKIE_NAME, path="/")
+            return resp
         body, _ = page("Verification required", REVERIFY_FORM)
         return make_response(body, 401)
 
@@ -317,6 +329,7 @@ def reverify():
         with LOCK:
             rec["ua_hash"] = ua_hash()
             rec["stepped_down"] = False
+            rec["reverify_fails"] = 0
     return attach_cookie(make_response(redirect("/dashboard")), sid)
 
 
