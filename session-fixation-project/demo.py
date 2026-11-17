@@ -33,6 +33,7 @@ EXPECTED = {
     "stolen_id_other_ua":  {"broken": True,  "partial": False, "secure": False},
     "legit_ua_update":     {"broken": None,  "partial": True,  "secure": True},
     "reverify_bruteforce": {"broken": None,  "partial": False, "secure": False},
+    "url_sid_variants":    {"broken": None,  "partial": False, "secure": False},
 }
 
 
@@ -127,6 +128,20 @@ def reverify_bruteforce(base):
     still_alive = "not signed in" not in r.text
     return still_alive, f"victim GET /dashboard after 3 bad guesses -> {r.status_code}"
 
+def url_sid_variants(base):
+    """Other ways to sneak an ID into the URL. Partial should 400 every one."""
+    token = "attacker-chosen-" + secrets.token_hex(8)
+    paths = [
+        f"/login;jsessionid={token}",  # path param style
+        f"/login?sessionid={token}",
+        f"/login?session_id={token}",
+        f"/login?token={token}",
+        f"/login?SID={token}",         # case shouldn't matter
+    ]
+    victim = Client(base, VICTIM_UA)
+    accepted = [p for p in paths if victim.req("GET", p).status_code != 400]
+    return bool(accepted), f"accepted: {accepted or 'none'}"
+
 
 SCENARIOS = {
     "url_param_fixation": url_param_fixation,
@@ -134,6 +149,7 @@ SCENARIOS = {
     "stolen_id_other_ua": stolen_id_other_ua,
     "legit_ua_update": legit_ua_update,
     "reverify_bruteforce": reverify_bruteforce,
+    "url_sid_variants": url_sid_variants,
 }
 
 
