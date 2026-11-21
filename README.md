@@ -4,7 +4,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Flask](https://img.shields.io/badge/built%20with-Flask-black)
-![Status](https://img.shields.io/badge/status-in%20progress-orange)
+![Status](https://img.shields.io/badge/status-complete-brightgreen)
 
 **Group 2 Members:** Cameron Bentley, Greyson Brummer, Brian Tramuel
 
@@ -52,7 +52,7 @@ Our security architecture directly tracks the **OWASP Session Management Cheat S
 
 ```text
 itis6200-group2-session-fixation-lab/
-├── README.md                        # System documentation, OWASP mapping, and setup guide
+├── README.md                        # System documentation, OWASP mapping, setup guide, and AI disclosure
 └── session-fixation-project/
     ├── app.py                       # Flask application implementing broken, partial, and secure modes
     ├── demo.py                      # Automated verification suite testing all modes and assertions
@@ -132,3 +132,23 @@ $env:MODE="secure"; $env:COOKIE_SECURE="0"; python app.py
 - **Direct Login Endpoint:** http://127.0.0.1:5000/login
 - **Demo Account Credentials:** `alice` / `correct-horse-battery`
 - **Optional Environment Variables:** `MODE` (`broken` | `partial` | `secure`), `SESSION_COOKIE_NAME` (default: `sid`), `COOKIE_SECURE` (default: `1`), `PORT` (default: `5000`).
+
+---
+
+## 5. AI Usage Disclosure
+
+**Course:** ITIS 6200/8200 · Fall 2026 · Group 2  
+**Group Members:** Cameron Bentley, Greyson Brummer, Brian Tramuel  
+**Repository:** https://github.com/cameronpbentley/itis6200-group2-session-fixation-lab.git
+
+### AI Tools & Scope of Use
+Anthropic **Claude** was used to generate all of the project code files (`app.py`, `demo.py`, `walkthrough.py`, `run_all.sh`, and `requirements.txt`) as well as assist with documentation scaffolding, based on Group 2's revised system architecture, threat model, and specifications.
+
+### Verification & Group Review
+Every AI-generated code file was audited line-by-line, executed, and validated by Group 2 against the course rubric, the **OWASP Session Management Cheat Sheet**, and TA Utkarsh Parashar's proposal feedback:
+- **Session ID Regeneration:** Verified that `MODE=secure` invalidates pre-authentication session identifiers via `destroy_session(sid)` and issues fresh 256-bit tokens via `secrets.token_urlsafe(32)` upon `POST /login` and `POST /reverify`.
+- **Cookie & URL Hardening:** Confirmed that `attach_cookie()` enforces `HttpOnly`, `SameSite=Lax`, `Secure`, and session timeouts, while `@app.before_request` (`reject_url_session_ids()`) blocks URL query and path session tokens (`HTTP 400`).
+- **Graceful Degradation & Brute-Force Protection:** Validated the stepped-down verification flow (`GET /dashboard` → `HTTP 401` → `POST /reverify`) for legitimate `User-Agent` updates, including the 3-attempt brute-force lockout (`MAX_REVERIFY_ATTEMPTS = 3`).
+- **End-to-End Testing:** Executed `python demo.py -v` and tested the `/demo` browser walkthrough across all three modes (`broken`, `partial`, `secure`) to confirm deterministic pass/fail assertions.
+
+*(Complete prompt logs, verification notes, and technical explanations of libraries/concepts are provided in the AI Appendix of Group 2's Final Written Report.)*
